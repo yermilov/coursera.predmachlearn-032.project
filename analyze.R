@@ -31,3 +31,7 @@ model_rf <- train(train_data$classe ~ ., method="rf", data = pca_data, prox=TRUE
 
 # additive logistic regression boosting model
 model_ada <- train(train_data$classe ~ ., method="ada", data = pca_data)
+
+# report
+library(knitr)
+knit2html("report.Rmd")

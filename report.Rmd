@@ -1,0 +1,77 @@
+---
+title: "Predicting the manner in which man do the exercise"
+---
+
+# Predicting the manner in which man do the exercise
+
+## Synopsis
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://groupware.les.inf.puc-rio.br/har) - see the section on the Weight Lifting Exercise Dataset.
+
+## Exploring the data
+
+The training data for this project are available [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+The test data are available [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv).
+The data for this project come from this [source](http://groupware.les.inf.puc-rio.br/har).
+
+Let's load dataset and look at the data primary features:
+```{r}
+data <- read.table("data\\pml-training.csv", header = TRUE, sep = ",", colClasses = c( rep("character", 6), rep("numeric", 5), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 42), rep("character", 6), rep("numeric", 12), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 23), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 19), rep("character", 1) ))
+
+dim(data)
+head(data)
+summary(data)
+```
+
+## Data cleaning
+
+Let's use only numeric variables for building our prediction model:
+```{r}
+data_columns <- sapply(data, is.numeric)
+data_columns['classe'] = TRUE
+data <- data[data_columns]
+data$classe <- as.factor(data$classe)
+
+dim(data)
+```
+
+## Data slicing
+
+```{r}
+library(caret)
+train_data_index <- createDataPartition(y=data$classe, p = 0.7, list=FALSE)
+train_data <- data[train_data_index,]
+test_data <- data[-train_data_index,]
+
+dim(train_data)
+dim(test_data)
+```
+
+## Data preprocessing
+
+As we have lot's of NA values let's impute them using K-Nearest Neighbour method:
+```{r}
+preprocess_data <- train_data[,-120]
+imputed_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_data)
+
+head(imputed_data)
+summary(imputed_data)
+```
+
+As we have more 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level:
+```{r}
+preProcess(imputed_data, method="pca")
+
+pca_data <- predict(preProcess(imputed_data, method="pca"), imputed_data)
+
+head(pca_data)
+summary(pca_data)
+```
+
+## Building predicting models
+
+## Cross validation
+
+## Calculating error
+
+## Summary
