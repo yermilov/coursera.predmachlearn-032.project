@@ -69,7 +69,7 @@ head(imputed_data)
 summary(imputed_data)
 ```
 
-As we have more 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level:
+As we have 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level:
 ```{r}
 pca_action <- preProcess(imputed_data, method="pca")
 pca_action
@@ -84,13 +84,13 @@ summary(pca_data)
 
 Let's build two models on train data set and compare their performance using validation data set. Besides that, both models are improving therselves using cross-validation inside train data set.
 
-First model is boosting with trees model:
+First option is boosting with trees model:
 ```{r cache = TRUE}
-model_gbm <- train(train_data$classe ~ ., method="gbm", data = pca_data)
+model_gbm <- train(train_data$classe ~ ., method="gbm", data = pca_data, verbose=FALSE)
 model_gbm
 ```
 
-Second model is random forest model:
+Second option is random forest model:
 ```{r cache = TRUE}
 model_rf <- train(train_data$classe ~ ., method="rf", data = pca_data, prox=TRUE)
 model_rf
@@ -119,11 +119,11 @@ predictions_rf <- predict(model_rf, pca_validation_data)
 confusionMatrix(predictions_rf, validation_data$classe)
 ```
 
-As we can, see Random Forest model gives us much better performance, so let's use it.
+As we can see, Random Forest model gives us much better performance, so let's use it.
 
 ## Calculating error
 
-To calculate actual error of Random Forest model, let's use test data set.
+To calculate sample error of Random Forest model, let's use test data set.
 
 First, we need to prepare it:
 ```{r}
@@ -139,3 +139,8 @@ confusionMatrix(test_rf, test_data$classe)
 ```
 
 ## Summary
+
+So, we have used data from accelerometers to build model to predict how well barbell lifts were done.
+We have examined two models - boosting with trees and random forest.
+Random forest model has shown much better performance on validation data set, so it was chosen for usage.
+Using test set, its sample error was measured. As example, its accuraccy is `r confusionMatrix(test_rf, test_data$classe)$overall[['Accuracy']]`.
