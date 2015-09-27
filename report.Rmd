@@ -14,6 +14,12 @@ The training data for this project are available [here](https://d396qusza40orc.c
 The test data are available [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv).
 The data for this project come from this [source](http://groupware.les.inf.puc-rio.br/har).
 
+Before start, let's prepare R environment:
+```{r}
+library(caret)
+set.seed(172843)
+```
+
 Let's load dataset and look at the data primary features:
 ```{r}
 data <- read.table("data\\pml-training.csv", header = TRUE, sep = ",", colClasses = c( rep("character", 6), rep("numeric", 5), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 42), rep("character", 6), rep("numeric", 12), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 23), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 19), rep("character", 1) ))
@@ -38,12 +44,16 @@ dim(data)
 ## Data slicing
 
 ```{r}
-library(caret)
 train_data_index <- createDataPartition(y=data$classe, p = 0.7, list=FALSE)
 train_data <- data[train_data_index,]
 test_data <- data[-train_data_index,]
 
+train_data_index <- createDataPartition(y=train_data$classe, p = 0.7, list=FALSE)
+validation_data <- train_data[-train_data_index,]
+train_data <- train_data[train_data_index,]
+
 dim(train_data)
+dim(validation_data)
 dim(test_data)
 ```
 
@@ -52,7 +62,8 @@ dim(test_data)
 As we have lot's of NA values let's impute them using K-Nearest Neighbour method:
 ```{r}
 preprocess_data <- train_data[,-120]
-imputed_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_data)
+impute_action <- preProcess(preprocess_data, method="knnImpute")
+imputed_data <- predict(impute_action, preprocess_data)
 
 head(imputed_data)
 summary(imputed_data)
@@ -60,9 +71,10 @@ summary(imputed_data)
 
 As we have more 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level:
 ```{r}
-preProcess(imputed_data, method="pca")
+pca_action <- preProcess(imputed_data, method="pca")
+pca_action
 
-pca_data <- predict(preProcess(imputed_data, method="pca"), imputed_data)
+pca_data <- predict(pca_action, imputed_data)
 
 head(pca_data)
 summary(pca_data)
@@ -70,8 +82,60 @@ summary(pca_data)
 
 ## Building predicting models
 
+Let's build two models on train data set and compare their performance using validation data set. Besides that, both models are improving therselves using cross-validation inside train data set.
+
+First model is boosting with trees model:
+```{r cache = TRUE}
+model_gbm <- train(train_data$classe ~ ., method="gbm", data = pca_data)
+model_gbm
+```
+
+Second model is random forest model:
+```{r cache = TRUE}
+model_rf <- train(train_data$classe ~ ., method="rf", data = pca_data, prox=TRUE)
+model_rf
+```
+
 ## Cross validation
 
+Let's prepare validation data set:
+```{r}
+preprocess_validation_data <- validation_data[,-120]
+imputed_validation_data <- predict(impute_action, preprocess_validation_data)
+pca_validation_data <- predict(pca_action, imputed_validation_data)
+```
+
+Now we can compare both models' performance using validation data set.
+
+Boosting with trees performance:
+```{r}
+predictions_gbm <- predict(model_gbm, pca_validation_data)
+confusionMatrix(predictions_gbm, validation_data$classe)
+```
+
+Random forest model performance:
+```{r}
+predictions_rf <- predict(model_rf, pca_validation_data)
+confusionMatrix(predictions_rf, validation_data$classe)
+```
+
+As we can, see Random Forest model gives us much better performance, so let's use it.
+
 ## Calculating error
+
+To calculate actual error of Random Forest model, let's use test data set.
+
+First, we need to prepare it:
+```{r}
+preprocess_test_data <- test_data[,-120]
+imputed_test_data <- predict(impute_action, preprocess_test_data)
+pca_test_data <- predict(pca_action, imputed_test_data)
+```
+
+And now, we can calculate it:
+```{r}
+test_rf <- predict(model_rf, pca_test_data)
+confusionMatrix(test_rf, test_data$classe)
+```
 
 ## Summary
