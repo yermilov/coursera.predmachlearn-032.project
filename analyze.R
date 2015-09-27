@@ -41,10 +41,10 @@ pca_question_data <- predict(pca_action, imputed_question_data)
 
 # find answers
 answers <- predict(model_rf, pca_question_data)
+# A A B A A E D B A A B C B A E E A B B B
 
 # write answers to file
 for(i in 1:length(answers)) {
     filename = paste0("answers\\problem_id_", i, ".txt")
     write.table(answers[i], file=filename, quote=FALSE, row.names=FALSE, col.names=FALSE)
-  }
 }
