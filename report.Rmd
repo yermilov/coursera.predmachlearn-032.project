@@ -77,7 +77,7 @@ pca_data <- predict(pca_action, imputed_data)
 pca_action
 ```
 
-So, we can use just 34 components to capture 95 percent of the variance.
+So, we can use just `r pca_action$numComp` components to capture `r pca_action$thresh` of the variance.
 
 ## Building predicting models
 
