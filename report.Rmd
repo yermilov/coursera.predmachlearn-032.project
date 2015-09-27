@@ -1,12 +1,12 @@
 ---
-title: "Predicting the manner in which man do the exercise"
+title: "Predicting How Well Barbell Lifts Are Done"
 ---
 
-# Predicting the manner in which man do the exercise
+# Predicting How Well Barbell Lifts Are Done
 
 ## Synopsis
 
-Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://groupware.les.inf.puc-rio.br/har) - see the section on the Weight Lifting Exercise Dataset.
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. We should use data from accelerometers to build model to predict how well barbell lifts were done.
 
 ## Exploring the data
 
@@ -20,13 +20,11 @@ library(caret)
 set.seed(172843)
 ```
 
-Let's load dataset and look at the data primary features:
+Let's load dataset and explore it (see Appendix for details):
 ```{r}
 data <- read.table("data\\pml-training.csv", header = TRUE, sep = ",", colClasses = c( rep("character", 6), rep("numeric", 5), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 42), rep("character", 6), rep("numeric", 12), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 23), rep("character", 6), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 2), rep("character", 1), rep("numeric", 19), rep("character", 1) ))
 
 dim(data)
-head(data)
-summary(data)
 ```
 
 ## Data cleaning
@@ -43,7 +41,12 @@ dim(data)
 
 ## Data slicing
 
-```{r}
+Let's slice data into 3 parts:
+- train data set will be used for training model
+- validation data set will be used for evaluation what model is better for usage
+- test data set will be used for calculation sample error
+
+```{r cache = TRUE}
 train_data_index <- createDataPartition(y=data$classe, p = 0.7, list=FALSE)
 train_data <- data[train_data_index,]
 test_data <- data[-train_data_index,]
@@ -59,26 +62,22 @@ dim(test_data)
 
 ## Data preprocessing
 
-As we have lot's of NA values let's impute them using K-Nearest Neighbour method:
-```{r}
+As we have lot's of NA values let's impute them using K-Nearest Neighbour method (see Appendix for data exploration):
+```{r cache = TRUE}
 preprocess_data <- train_data[,-120]
 impute_action <- preProcess(preprocess_data, method="knnImpute")
 imputed_data <- predict(impute_action, preprocess_data)
-
-head(imputed_data)
-summary(imputed_data)
 ```
 
-As we have 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level:
-```{r}
+As we have 120 variables, let's see if we can reduce their number via Principal Component Analysis keeping high variation level (see Appendix for data exploration):
+```{r cache = TRUE}
 pca_action <- preProcess(imputed_data, method="pca")
-pca_action
-
 pca_data <- predict(pca_action, imputed_data)
 
-head(pca_data)
-summary(pca_data)
+pca_action
 ```
+
+So, we can use just 34 components to capture 95 percent of the variance.
 
 ## Building predicting models
 
@@ -99,7 +98,7 @@ model_rf
 ## Cross validation
 
 Let's prepare validation data set:
-```{r}
+```{r cache = TRUE}
 preprocess_validation_data <- validation_data[,-120]
 imputed_validation_data <- predict(impute_action, preprocess_validation_data)
 pca_validation_data <- predict(pca_action, imputed_validation_data)
@@ -108,13 +107,13 @@ pca_validation_data <- predict(pca_action, imputed_validation_data)
 Now we can compare both models' performance using validation data set.
 
 Boosting with trees performance:
-```{r}
+```{r cache = TRUE}
 predictions_gbm <- predict(model_gbm, pca_validation_data)
 confusionMatrix(predictions_gbm, validation_data$classe)
 ```
 
 Random forest model performance:
-```{r}
+```{r cache = TRUE}
 predictions_rf <- predict(model_rf, pca_validation_data)
 confusionMatrix(predictions_rf, validation_data$classe)
 ```
@@ -126,14 +125,14 @@ As we can see, Random Forest model gives us much better performance, so let's us
 To calculate sample error of Random Forest model, let's use test data set.
 
 First, we need to prepare it:
-```{r}
+```{r cache = TRUE}
 preprocess_test_data <- test_data[,-120]
 imputed_test_data <- predict(impute_action, preprocess_test_data)
 pca_test_data <- predict(pca_action, imputed_test_data)
 ```
 
-And now, we can calculate it:
-```{r}
+And now, we can do calculation:
+```{r cache = TRUE}
 test_rf <- predict(model_rf, pca_test_data)
 confusionMatrix(test_rf, test_data$classe)
 ```
@@ -144,3 +143,23 @@ So, we have used data from accelerometers to build model to predict how well bar
 We have examined two models - boosting with trees and random forest.
 Random forest model has shown much better performance on validation data set, so it was chosen for usage.
 Using test set, its sample error was measured. As example, its accuraccy is `r confusionMatrix(test_rf, test_data$classe)$overall[['Accuracy']]`.
+
+## Appendix
+
+Exploration of original dataset:
+```{r cache = TRUE}
+head(data)
+summary(data)
+```
+
+Exploration of imputed dataset:
+```{r cache = TRUE}
+head(imputed_data)
+summary(imputed_data)
+```
+
+Exploration of PCA dataset:
+```{r cache = TRUE}
+head(pca_data)
+summary(pca_data)
+```
