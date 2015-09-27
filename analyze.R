@@ -13,6 +13,7 @@ data_columns['classe'] = TRUE
 data <- data[data_columns]
 data$classe <- as.factor(data$classe)
 
+data_columns <- sapply(question_data, is.numeric)
 question_data <- question_data[data_columns]
 
 # data slicing
