@@ -30,7 +30,7 @@ pca_data <- predict(preProcess(imputed_data, method="pca"), imputed_data)
 # boosting with trees model
 model_gbm <- train(train_data$classe ~ ., method="gbm", data = pca_data)
 
-# random tree model
+# random forest model
 model_rf <- train(train_data$classe ~ ., method="rf", data = pca_data, prox=TRUE)
 
 # preprocessing validation data
@@ -38,7 +38,7 @@ preprocess_validation_data <- validation_data[,-120]
 imputed_validation_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_validation_data)
 pca_validation_data <- predict(preProcess(imputed_data, method="pca"), imputed_validation_data)
 
-# random tree validation
+# random forest validation
 predictions_rf <- predict(model_rf, pca_validation_data)
 confusionMatrix(predictions_rf, validation_data$classe)
 
@@ -51,7 +51,7 @@ preprocess_test_data <- test_data[,-120]
 imputed_test_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_test_data)
 pca_test_data <- predict(preProcess(imputed_data, method="pca"), imputed_test_data)
 
-# random tree test
+# random forest test
 test_rf <- predict(model_rf, pca_test_data)
 confusionMatrix(test_rf, test_data$classe)
 
