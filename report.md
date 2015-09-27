@@ -120,7 +120,7 @@ pca_action
 ## PCA needed 34 components to capture 95 percent of the variance
 ```
 
-So, we can use just 34 components to capture 95 percent of the variance.
+So, we can use just 34 components to capture 0.95 of the variance.
 
 ## Building predicting models
 
