@@ -16,6 +16,10 @@ train_data_index <- createDataPartition(y=data$classe, p = 0.7, list=FALSE)
 train_data <- data[train_data_index,]
 test_data <- data[-train_data_index,]
 
+train_data_index <- createDataPartition(y=train_data$classe, p = 0.7, list=FALSE)
+validation_data <- train_data[-train_data_index,]
+train_data <- train_data[train_data_index,]
+
 # preprocessing
 preprocess_data <- train_data[,-120]
 # imputing
@@ -29,8 +33,32 @@ model_gbm <- train(train_data$classe ~ ., method="gbm", data = pca_data)
 # random tree model
 model_rf <- train(train_data$classe ~ ., method="rf", data = pca_data, prox=TRUE)
 
-# additive logistic regression boosting model
-model_ada <- train(train_data$classe ~ ., method="ada", data = pca_data)
+# preprocessing validation data
+preprocess_validation_data <- validation_data[,-120]
+imputed_validation_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_validation_data)
+pca_validation_data <- predict(preProcess(imputed_data, method="pca"), imputed_validation_data)
+
+# random tree validation
+predictions_rf <- predict(model_rf, pca_validation_data)
+confusionMatrix(predictions_rf, validation_data$classe)
+
+# boosting with trees validation
+predictions_gbm <- predict(model_gbm, pca_validation_data)
+confusionMatrix(predictions_gbm, validation_data$classe)
+
+# preprocessing test data
+preprocess_test_data <- test_data[,-120]
+imputed_test_data <- predict(preProcess(preprocess_data, method="knnImpute"), preprocess_test_data)
+pca_test_data <- predict(preProcess(imputed_data, method="pca"), imputed_test_data)
+
+# random tree test
+test_rf <- predict(model_rf, pca_test_data)
+confusionMatrix(test_rf, test_data$classe)
+
+# boosting with trees test
+test_gbm <- predict(model_gbm, pca_test_data)
+confusionMatrix(test_gbm, test_data$classe)
+
 
 # report
 library(knitr)
